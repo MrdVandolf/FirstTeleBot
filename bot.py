@@ -49,6 +49,14 @@ def hello(update: Update, context):
     )
 
 
+def profile(update: Update, context):
+    user_id = update.effective_user.id
+    context.bot.send_message(
+        chat_id=update.effective_message.chat_id,
+        text=f"Привет, {str(id)}!\nКак твои дела?"
+    )
+
+
 def start(update: Update, context):
     user_name = update.effective_user.user_name
     context.bot.send_message(
@@ -69,9 +77,11 @@ def main():
     keyboard_handler = CallbackQueryHandler(callback=keyboard_regulate, pass_chat_data=True)
     my_handler = MessageHandler(Filters.all, hello)
     start_handler = CommandHandler("start", start)
+    profile_handler = CommandHandler("profile", profile)
 
     my_update.dispatcher.add_handler(keyboard_handler)
     my_update.dispatcher.add_handler(start_handler)
+    my_update.dispatcher.add_handler(profile_handler)
     my_update.dispatcher.add_handler(my_handler)
 
     my_update.start_polling()
