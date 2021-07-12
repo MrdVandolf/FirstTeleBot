@@ -53,7 +53,7 @@ def start(update: Update, context):
     user_name = update.effective_user.id
     context.bot.send_message(
         chat_id=update.effective_message.chat_id,
-        text=f"Привет, {user_name}!\nКак твои дела?",
+        text=f"Привет, {str(user_name)}!\nКак твои дела?",
         reply_markup=generate_keyboard()
     )
 
