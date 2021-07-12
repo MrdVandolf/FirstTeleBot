@@ -65,7 +65,6 @@ def main():
         use_context=True
     )
 
-    names = open("tmp/names.txt").readlines()
 
     keyboard_handler = CallbackQueryHandler(callback=keyboard_regulate, pass_chat_data=True)
     my_handler = MessageHandler(Filters.all, hello)
