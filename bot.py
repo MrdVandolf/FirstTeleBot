@@ -58,16 +58,6 @@ def start(update: Update, context):
     )
 
 
-def profile(update: Update, context):
-
-    user_name = update.effective_user.user_name
-    context.bot.send_message(
-        chat_id=update.effective_message.chat_id,
-        text=f"Привет, {str(user_name)}!\nКак?",
-        reply_markup=generate_keyboard()
-    )
-
-
 def main():
     my_update = Updater(
         token=config.TOKEN,
@@ -80,7 +70,6 @@ def main():
     keyboard_handler = CallbackQueryHandler(callback=keyboard_regulate, pass_chat_data=True)
     my_handler = MessageHandler(Filters.all, hello)
     start_handler = CommandHandler("start", start)
-    profile_handler = CommandHandler("profile", profile)
 
     my_update.dispatcher.add_handler(keyboard_handler)
     my_update.dispatcher.add_handler(start_handler)
