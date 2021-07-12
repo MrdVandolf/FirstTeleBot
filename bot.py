@@ -61,7 +61,7 @@ def start(update: Update, context):
 def main():
     my_update = Updater(
         token=config.TOKEN,
-      #  base_url=config.PROXI,
+      #he  base_url=config.PROXI,
         use_context=True
     )
 
