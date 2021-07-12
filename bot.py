@@ -64,19 +64,19 @@ def profile(update: Update, context):
 
 def start(update: Update, context):
     is_new_user = check_db(update.effective_user.id)
+    ch_id = update.effective_message.chat_id
+    user_name = update.effective_user.user_name
 
     if is_new_user:
-        user_name = update.effective_user.user_name
         context.bot.send_message(
-            chat_id=update.effective_message.chat_id,
+            chat_id=ch_id,
             text=f"Привет, {str(user_name)}!\nТы, похоже, новенький! Как твои дела?",
             reply_markup=generate_keyboard()
         )
 
     else:
-        user_name = update.effective_user.user_name
         context.bot.send_message(
-            chat_id=update.effective_message.chat_id,
+            chat_id=ch_id,
             text=f"Привет, {str(user_name)}!\n Как твои дела?",
             reply_markup=generate_keyboard()
         )
