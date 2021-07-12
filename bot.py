@@ -50,7 +50,7 @@ def hello(update: Update, context):
 
 
 def start(update: Update, context):
-    user_name = update.effective_user.id
+    user_name = update.effective_user.user_name
     context.bot.send_message(
         chat_id=update.effective_message.chat_id,
         text=f"Привет, {str(user_name)}!\nКак твои дела?",
@@ -59,7 +59,13 @@ def start(update: Update, context):
 
 
 def profile(update: Update, context):
-    pass
+
+    user_name = update.effective_user.user_name
+    context.bot.send_message(
+        chat_id=update.effective_message.chat_id,
+        text=f"Привет, {str(user_name)}!\nКак?",
+        reply_markup=generate_keyboard()
+    )
 
 
 def main():
