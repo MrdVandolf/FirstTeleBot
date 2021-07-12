@@ -50,7 +50,7 @@ def hello(update: Update, context):
 
 
 def start(update: Update, context):
-    user_name = update.effective_user.first_name
+    user_name = update.effective_user.id
     context.bot.send_message(
         chat_id=update.effective_message.chat_id,
         text=f"Привет, {user_name}!\nКак твои дела?",
@@ -59,20 +59,17 @@ def start(update: Update, context):
 
 
 def profile(update: Update, context):
-    user_name = update.effective_user.first_name
-    context.bot.send_message(
-        chat_id=update.effective_message.chat_id,
-        text=f"{user_name}"
-    )
-
+    pass
 
 
 def main():
     my_update = Updater(
         token=config.TOKEN,
-      #he  base_url=config.PROXI,
+        base_url=config.PROXI,
         use_context=True
     )
+
+    names = open("tmp/names.txt").readlines()
 
     keyboard_handler = CallbackQueryHandler(callback=keyboard_regulate, pass_chat_data=True)
     my_handler = MessageHandler(Filters.all, hello)
