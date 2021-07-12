@@ -2,12 +2,12 @@ import config
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, MessageHandler, CommandHandler, Filters, CallbackQueryHandler
 
-
 CALLBACK_GOOD = "good"
 CALLBACK_BAD = "bad"
 
 GOOD_STICKER = "CAACAgIAAxkBAAJX_16nCRx3_yNcHjGJJ8UkEk62o0MTAAIXAAN_gBAunKNhxU-S6OIZBA"
 BAD_STICKER = "CAACAgIAAxkBAAJYAV6nCSUZKTelneyyMG6wcXKM5u4VAAImAAN_gBAuCDLXyOyP3gYZBA"
+
 
 
 def generate_keyboard():
@@ -61,7 +61,7 @@ def start(update: Update, context):
 def main():
     my_update = Updater(
         token=config.TOKEN,
-    #   base_url=config.PROXI,
+      #  base_url=config.PROXI,
         use_context=True
     )
 
