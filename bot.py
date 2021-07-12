@@ -53,8 +53,6 @@ def check_db(user_id):
     file = open("tmp/names.txt", "a")
     lines = file.readlines()
     is_old = str(user_id) in lines
-    if not is_old:
-        file.write(str(user_id))
     return is_old
 
 
