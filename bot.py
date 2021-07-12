@@ -67,20 +67,23 @@ def start(update: Update, context):
     ch_id = update.effective_message.chat_id
     user_name = update.effective_user.user_name
 
+    context.bot.send_message(
+        chat_id=ch_id,
+        text=f"{str(is_new_user)}"
+    )
+    """"
     if is_new_user:
         context.bot.send_message(
             chat_id=ch_id,
-            text=f"Привет, {str(user_name)}!\nТы, похоже, новенький! Как твои дела?",
-            reply_markup=generate_keyboard()
+            text=f"Привет, {str(user_name)}!\nТы, похоже, новенький! Как твои дела?"
         )
 
     else:
         context.bot.send_message(
             chat_id=ch_id,
-            text=f"Привет, {str(user_name)}!\n Как твои дела?",
-            reply_markup=generate_keyboard()
+            text=f"Привет, {str(user_name)}!\n Как твои дела?"
         )
-
+"""
 
 def main():
     my_update = Updater(
