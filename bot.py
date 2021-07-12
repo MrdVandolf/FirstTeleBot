@@ -1,4 +1,4 @@
-import config
+import config, db
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, MessageHandler, CommandHandler, Filters, CallbackQueryHandler
 
@@ -50,10 +50,8 @@ def hello(update: Update, context):
 
 
 def check_db(user_id):
-    file = open("tmp/names.txt", "a")
-    lines = file.readlines()
-    is_old = str(user_id) in lines
-    return is_old
+    file = db.names
+    return user_id in file
 
 
 def profile(update: Update, context):
