@@ -53,7 +53,7 @@ def profile(update: Update, context):
     user_id = update.effective_user.id
     context.bot.send_message(
         chat_id=update.effective_message.chat_id,
-        text=f"Привет, {str(id)}!\nКак твои дела?"
+        text=f"Привет, {str(user_id)}!\nКак твои дела?"
     )
 
 
