@@ -49,6 +49,15 @@ def hello(update: Update, context):
     )
 
 
+def check_db(user_id):
+    file = open("tmp/names.txt", "a")
+    lines = file.readlines()
+    is_old = str(user_id) in lines
+    if not is_old:
+        file.write(str(user_id))
+    return is_old
+
+
 def profile(update: Update, context):
     user_id = update.effective_user.id
     context.bot.send_message(
@@ -58,12 +67,23 @@ def profile(update: Update, context):
 
 
 def start(update: Update, context):
-    user_name = update.effective_user.user_name
-    context.bot.send_message(
-        chat_id=update.effective_message.chat_id,
-        text=f"Привет, {str(user_name)}!\nКак твои дела?",
-        reply_markup=generate_keyboard()
-    )
+    is_new_user = check_db(update.effective_user.id)
+
+    if is_new_user:
+        user_name = update.effective_user.user_name
+        context.bot.send_message(
+            chat_id=update.effective_message.chat_id,
+            text=f"Привет, {str(user_name)}!\nТы, похоже, новенький! Как твои дела?",
+            reply_markup=generate_keyboard()
+        )
+
+    else:
+        user_name = update.effective_user.user_name
+        context.bot.send_message(
+            chat_id=update.effective_message.chat_id,
+            text=f"Привет, {str(user_name)}!\n Как твои дела?",
+            reply_markup=generate_keyboard()
+        )
 
 
 def main():
