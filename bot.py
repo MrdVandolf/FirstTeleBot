@@ -1,5 +1,4 @@
 import config, db
-import sqlite3
 from db import *
 from utility import *
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
