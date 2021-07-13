@@ -1,5 +1,6 @@
 import config, db
 import sqlite3
+from db import *
 from utility import *
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, MessageHandler, CommandHandler, Filters, CallbackQueryHandler
@@ -43,21 +44,15 @@ def clear_keyboards(chat_id):
     TMP_KEYBOARD_MESS[chat_id] = []
 
 
+def clear_list_of_keyboards(chat_id):
+    TMP_KEYBOARD_MESS[chat_id] = []
+
+
 def delete_keyboard(query):
     # Убираем клаву с прошлого сообщения бота
     query.edit_message_text(
         text=query.message.text
     )
-
-""""
-def generate_keyboard():
-    keyboard = [
-        [InlineKeyboardButton("Хорошо", callback_data=CALLBACK_GOOD),
-         InlineKeyboardButton("Плохо", callback_data=CALLBACK_BAD)]
-    ]
-
-    return InlineKeyboardMarkup(keyboard)
-"""
 
 
 def regulate_profile(update: Update, context, query=None, current_call=None):
@@ -90,23 +85,74 @@ def regulate_profile(update: Update, context, query=None, current_call=None):
             chat_id=chid,
             text="Хорошо. Теперь напиши свое имя и фамилию в одну строку и нажми 'Отправить'\n\nПример: Сергей Орлов\n\n"
                  "Текущее использующееся имя: {} {}".format(user.first_name, user.last_name),
-            reply_markup=generate_name_keys(check_user_in_db(us_id))
+            reply_markup=generate_name_keys(get_info_on(us_id))
         )
         add_message_to_clearance(chid, new_message)
 
     elif CHAT_PHASE[chid] == 2:
         if query != None:
             delete_keyboard(query)
+            clear_list_of_keyboards(chid)
             TMP_USR_INF[us_id]["name"] = "{} {}".format(user.first_name, user.last_name)
         else:
             clear_keyboards(chid)
             TMP_USR_INF[us_id]["name"] = update.effective_message.text
 
+        new_message = context.bot.send_message(
+            chat_id=chid,
+            text="Выбери из списка свой город или напиши его название одной строкой и нажми 'Отправить'",
+            reply_markup=generate_city_keys(get_info_on(us_id))
+        )
+        add_message_to_clearance(chid, new_message)
+        CHAT_PHASE[chid] = 3
+
+    elif CHAT_PHASE[chid] == 3:
+
+        if query != None:
+            delete_keyboard(query)
+            clear_list_of_keyboards(chid)
+            TMP_USR_INF[us_id]["city"] = current_call
+        else:
+            clear_keyboards(chid)
+            TMP_USR_INF[us_id]["city"] = update.effective_message.text
+
+        new_message = context.bot.send_message(
+            chat_id=chid,
+            text="Напиши, о чем тебе было бы интересно поговорить, чем ты хочешь поделиться с другими людьми?\nЭто может"
+                 "быть что угодно, от киберспорта до домашнего огорода\n"
+                 "Или ты можешь стать человеком-загадкой и пропустить этот вопрос",
+            reply_markup=generate_bio_keys(get_info_on(us_id))
+        )
+
+        add_message_to_clearance(chid, new_message)
+        CHAT_PHASE[chid] = 4
+
+    elif CHAT_PHASE[chid] == 4:
+
+        if query != None:
+            delete_keyboard(query)
+            clear_list_of_keyboards(chid)
+            TMP_USR_INF[us_id]["interest"] = ""
+        else:
+            clear_keyboards(chid)
+            #clear_list_of_keyboards(chid)
+            TMP_USR_INF[us_id]["interest"] = update.effective_message.text
+
+        text = "Отлично! Ты обновил свой профиль и теперь готов!"
+        if TMP_USR_INF[us_id]["gender"] == "fml":
+            text = "Отлично! Ты обновила свой профиль и теперь готова!"
+
         context.bot.send_message(
             chat_id=chid,
-            text="OK, SPASIBO"
+            text=text
         )
-        print(TMP_USR_INF)
+        TMP_USR_INF[us_id]["user_id"] = user.id
+        ok = db.add_new_user(TMP_USR_INF[us_id])
+        if ok:
+            TMP_USR_INF.pop(us_id)
+        CHAT_STATUS[chid] = STATUS["FREE"]
+        CHAT_PHASE[chid] = 0
+
 
 
 def keyboard_regulate(update: Update, context):
@@ -122,16 +168,8 @@ def keyboard_regulate(update: Update, context):
 
 def texting(update: Update, context):
     chid = update.effective_message.chat_id
-    if CHAT_STATUS[chid] == STATUS["PROFILE"]:
+    if CHAT_STATUS[chid] == STATUS["PROFILE"] and CHAT_PHASE[chid] in [2, 3, 4]:
         regulate_profile(update, context)
-
-
-
-def check_user_in_db(user_id):
-    mc = sqlite3.connect("data/users.db").cursor()
-    mc.execute("SELECT * FROM users WHERE tid = {}".format(str(user_id)))
-    db_result = mc.fetchone()
-    return db_result
 
 
 def profile(update: Update, context):
@@ -140,6 +178,28 @@ def profile(update: Update, context):
         chat_id=update.effective_message.chat_id,
         text=f"Привет, {str(user_id)}!\nКак твои дела?"
     )
+
+
+def generate_bio_keys(user_info):
+    print(user_info)
+    if user_info == None:
+        keyboard = [
+            [InlineKeyboardButton("Пропустить", callback_data=PASS_CALL)]
+        ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def generate_city_keys(user_info):
+    if user_info == None:
+        keyboard = [
+            [InlineKeyboardButton("Москва", callback_data=CITY_CALLS["MOSCOW"]),
+             InlineKeyboardButton("Санкт-Петербург", callback_data=CITY_CALLS["SPB"]),
+             InlineKeyboardButton("Казань", callback_data=CITY_CALLS["KAZAN"]),
+             InlineKeyboardButton("Нижний Новгород", callback_data=CITY_CALLS["NIZH"])]
+        ]
+
+    return InlineKeyboardMarkup(keyboard)
 
 
 def generate_name_keys(user_info):
