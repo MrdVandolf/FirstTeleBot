@@ -226,7 +226,7 @@ def start(update: Update, context):
     user = update.effective_user
     ch_id = update.effective_message.chat_id
     user_name = user.first_name
-    db_result = check_user_in_db(user.id)  # результат
+    db_result = get_info_on(user.id)  # результат
 
     if db_result != None:
         context.bot.send_message(
