@@ -79,28 +79,40 @@ def regulate_profile(update: Update, context, query=None, current_call=None):
         if current_call in GENDER_CALLS.values():
             TMP_USR_INF[us_id]["gender"] = current_call
 
-        CHAT_PHASE[chid] = 2
+        message = "Хорошо. Теперь напиши свое имя и фамилию в одну строку и нажми 'Отправить'\n\nПример: Сергей Орлов\n\n"
+        user_info = get_info_on(us_id)
+        if user_info == None:
+            message += "Текущее использующееся имя: {} {}".format(user.first_name, user.last_name)
+        else:
+            message += "Текущее использующееся имя: {}".format(user_info["name"])
+
         # Начинаем следующую фазу - имя
         new_message = context.bot.send_message(
             chat_id=chid,
-            text="Хорошо. Теперь напиши свое имя и фамилию в одну строку и нажми 'Отправить'\n\nПример: Сергей Орлов\n\n"
-                 "Текущее использующееся имя: {} {}".format(user.first_name, user.last_name),
+            text=message,
             reply_markup=generate_name_keys(get_info_on(us_id))
         )
         add_message_to_clearance(chid, new_message)
+        CHAT_PHASE[chid] = 2
 
     elif CHAT_PHASE[chid] == 2:
         if query != None:
             delete_keyboard(query)
             clear_list_of_keyboards(chid)
-            TMP_USR_INF[us_id]["name"] = "{} {}".format(user.first_name, user.last_name)
+            if get_info_on(us_id) == None:
+                TMP_USR_INF[us_id]["name"] = "{} {}".format(user.first_name, user.last_name)
         else:
             clear_keyboards(chid)
             TMP_USR_INF[us_id]["name"] = update.effective_message.text
 
+        message = "Выбери из списка свой город или напиши его название одной строкой и нажми 'Отправить'"
+        user_info = get_info_on(us_id)
+        if user_info != None:
+            message += "\n\nТекущий город: {}".format(user_info["city"])
+
         new_message = context.bot.send_message(
             chat_id=chid,
-            text="Выбери из списка свой город или напиши его название одной строкой и нажми 'Отправить'",
+            text=message,
             reply_markup=generate_city_keys(get_info_on(us_id))
         )
         add_message_to_clearance(chid, new_message)
@@ -111,16 +123,25 @@ def regulate_profile(update: Update, context, query=None, current_call=None):
         if query != None:
             delete_keyboard(query)
             clear_list_of_keyboards(chid)
-            TMP_USR_INF[us_id]["city"] = current_call
+            if current_call != LEAVE_NOW_CALL:
+                TMP_USR_INF[us_id]["city"] = current_call
         else:
             clear_keyboards(chid)
             TMP_USR_INF[us_id]["city"] = update.effective_message.text
 
+        message = "Напиши, о чем тебе было бы интересно поговорить, чем ты хочешь поделиться с другими " \
+                  " людьми?\nЭто может быть что угодно, от киберспорта до домашнего огорода\n" \
+                  "Или ты можешь стать человеком-загадкой и пропустить этот вопрос"
+        user_info = get_info_on(us_id)
+        if user_info != None:
+            if user_info["interest"] != "":
+                message += "\n\nТвои текущие интересы: {}".format(user_info["interest"])
+            else:
+                message += "\n\nСейчас ты - человек-загадка"
+
         new_message = context.bot.send_message(
             chat_id=chid,
-            text="Напиши, о чем тебе было бы интересно поговорить, чем ты хочешь поделиться с другими людьми?\nЭто может"
-                 "быть что угодно, от киберспорта до домашнего огорода\n"
-                 "Или ты можешь стать человеком-загадкой и пропустить этот вопрос",
+            text=message,
             reply_markup=generate_bio_keys(get_info_on(us_id))
         )
 
@@ -128,26 +149,28 @@ def regulate_profile(update: Update, context, query=None, current_call=None):
         CHAT_PHASE[chid] = 4
 
     elif CHAT_PHASE[chid] == 4:
-
         if query != None:
             delete_keyboard(query)
             clear_list_of_keyboards(chid)
-            TMP_USR_INF[us_id]["interest"] = ""
+            if current_call != LEAVE_NOW_CALL:
+                TMP_USR_INF[us_id]["interest"] = ""
         else:
             clear_keyboards(chid)
-            #clear_list_of_keyboards(chid)
             TMP_USR_INF[us_id]["interest"] = update.effective_message.text
 
-        text = "Отлично! Ты обновил свой профиль и теперь готов!"
-        if TMP_USR_INF[us_id]["gender"] == "fml":
-            text = "Отлично! Ты обновила свой профиль и теперь готова!"
+        text = "Отлично! Твой профиль обновлен!"
 
         context.bot.send_message(
             chat_id=chid,
             text=text
         )
+
         TMP_USR_INF[us_id]["user_id"] = user.id
-        ok = db.add_new_user(TMP_USR_INF[us_id])
+        if get_info_on(user.id) == None:
+            ok = db.add_new_user(TMP_USR_INF[us_id])
+        else:
+            ok = db.patch_one_user(TMP_USR_INF[us_id])
+
         if ok:
             TMP_USR_INF.pop(us_id)
         CHAT_STATUS[chid] = STATUS["FREE"]
@@ -172,18 +195,15 @@ def texting(update: Update, context):
         regulate_profile(update, context)
 
 
-def profile(update: Update, context):
-    user_id = update.effective_user.id
-    context.bot.send_message(
-        chat_id=update.effective_message.chat_id,
-        text=f"Привет, {str(user_id)}!\nКак твои дела?"
-    )
-
-
 def generate_bio_keys(user_info):
-    print(user_info)
     if user_info == None:
         keyboard = [
+            [InlineKeyboardButton("Пропустить", callback_data=PASS_CALL)]
+        ]
+
+    else:
+        keyboard = [
+            [InlineKeyboardButton("Оставить как есть", callback_data=LEAVE_NOW_CALL)],
             [InlineKeyboardButton("Пропустить", callback_data=PASS_CALL)]
         ]
 
@@ -194,19 +214,27 @@ def generate_city_keys(user_info):
     if user_info == None:
         keyboard = [
             [InlineKeyboardButton("Москва", callback_data=CITY_CALLS["MOSCOW"]),
-             InlineKeyboardButton("Санкт-Петербург", callback_data=CITY_CALLS["SPB"]),
-             InlineKeyboardButton("Казань", callback_data=CITY_CALLS["KAZAN"]),
+             InlineKeyboardButton("Санкт-Петербург", callback_data=CITY_CALLS["SPB"])],
+             [InlineKeyboardButton("Казань", callback_data=CITY_CALLS["KAZAN"]),
              InlineKeyboardButton("Нижний Новгород", callback_data=CITY_CALLS["NIZH"])]
+        ]
+
+    else:
+        keyboard = [
+            [InlineKeyboardButton("Москва", callback_data=CITY_CALLS["MOSCOW"]),
+             InlineKeyboardButton("Санкт-Петербург", callback_data=CITY_CALLS["SPB"])],
+             [InlineKeyboardButton("Казань", callback_data=CITY_CALLS["KAZAN"]),
+             InlineKeyboardButton("Нижний Новгород", callback_data=CITY_CALLS["NIZH"])],
+            [InlineKeyboardButton("Оставить текущий город", callback_data=LEAVE_NOW_CALL)]
         ]
 
     return InlineKeyboardMarkup(keyboard)
 
 
 def generate_name_keys(user_info):
-    if user_info == None:
-        keyboard = [
-            [InlineKeyboardButton("Оставить текущее имя", callback_data=LEAVE_NOW_CALL)]
-        ]
+    keyboard = [
+        [InlineKeyboardButton("Оставить текущее имя", callback_data=LEAVE_NOW_CALL)]
+    ]
 
     return InlineKeyboardMarkup(keyboard)
 
@@ -217,9 +245,35 @@ def generate_gender_keys(user_info):
             [InlineKeyboardButton("В мужском", callback_data=GENDER_CALLS["MALE_CALL"]),
              InlineKeyboardButton("В женском", callback_data=GENDER_CALLS["FEMALE_CALL"])]
         ]
+    else:
+        ml_add = EMOJIS["check"] if user_info["gender"] == "ml" else ""
+        fml_add = EMOJIS["check"] if user_info["gender"] == "fml" else ""
+        keyboard = [
+            [InlineKeyboardButton(f"В мужском{ml_add}", callback_data=GENDER_CALLS["MALE_CALL"]),
+             InlineKeyboardButton(f"В женском{fml_add}", callback_data=GENDER_CALLS["FEMALE_CALL"]),
+             InlineKeyboardButton("Оставить как есть", callback_data=LEAVE_NOW_CALL)]
+        ]
 
     return InlineKeyboardMarkup(keyboard)
 
+
+def profile(update: Update, context):
+    user_id = update.effective_user.id
+    ch_id = update.effective_message.chat_id
+    user_info = get_info_on(user_id)
+
+    context.bot.send_message(
+        chat_id=update.effective_message.chat_id,
+        text=f"Хочешь изменить свой профиль? Хорошо, я помогу тебе с этим!"
+    )
+    context.bot.send_message(
+        chat_id=ch_id,
+        text="В каком роде я могу к тебе обращаться?",
+        reply_markup=generate_gender_keys(user_info)
+    )
+    TMP_USR_INF[user_id] = {}
+    CHAT_STATUS[ch_id] = STATUS["PROFILE"]
+    CHAT_PHASE[ch_id] = 1
 
 
 def start(update: Update, context):
@@ -229,9 +283,10 @@ def start(update: Update, context):
     db_result = get_info_on(user.id)  # результат
 
     if db_result != None:
+        user_info = get_info_on(user.id)
         context.bot.send_message(
             chat_id=ch_id,
-            text=f"Привет, {str(user_name)}!\n Как твои дела?"
+            text=f"Привет, {user_info['name']}!\n Как твои дела?"
         )
 
     else:
